@@ -1,4 +1,5 @@
 {
-  "name": "Sleigh Battle 3D",
-  "description": "A festive 2-player 3D snowball fighting game. Ride sleighs, dodge trees, and blast your opponent with snowballs! Features AI-generated battle commentary."
+  "name": "Świąteczna Bitwa na Sankach",
+  "description": "Wieloosobowa gra zręcznościowa na jednym ekranie. Jeździj sankami, zbieraj prezenty i pokonaj przeciwników śnieżkami!",
+  "requestFramePermissions": []
 }

@@ -1,87 +1,145 @@
-import React, { useState, useCallback } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { GameStatus, PlayerState } from './types';
-import GameScene from './components/GameScene';
-import UI from './components/UI';
-import { generateBattleCommentary } from './services/geminiService';
+import React, { useState, useEffect, useRef } from 'react';
+import { Menu } from './components/Menu';
+import { Viewport } from './components/Viewport';
+import { useGameEngine } from './hooks/useGameEngine';
+import { MapSize } from './types';
+import { Pause, LogOut, Play, Volume2, VolumeX } from 'lucide-react';
+import { MUSIC_URL } from './constants';
+import { SnowOverlay } from './components/SnowOverlay';
 
-// Default initial state for a player
-const initialPlayerState = (id: number): PlayerState => ({
-    id, 
-    position: { x: 0, y: 0, z: 0 }, 
-    rotation: 0, 
-    velocity: { x: 0, y: 0, z: 0 },
-    health: 100, 
-    color: '', 
-    name: '', 
-    cooldown: 0,
-    damageLevel: 1,
-    shotCount: 1
-});
-
-const App: React.FC = () => { 
-  const [status, setStatus] = useState<GameStatus>(GameStatus.MENU);
-  const [winnerId, setWinnerId] = useState<number | null>(null);
+const App = () => {
+  const [gameActive, setGameActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [config, setConfig] = useState({ players: 2, mapSize: MapSize.SMALL });
+  const [isMuted, setIsMuted] = useState(false);
   
-  // We keep a local copy of player states for UI rendering
-  const [p1State, setP1State] = useState<PlayerState>(initialPlayerState(1));
-  const [p2State, setP2State] = useState<PlayerState>(initialPlayerState(2));
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  const [commentary, setCommentary] = useState<string>("Loading report from the North Pole...");
-  const [gameKey, setGameKey] = useState(0);
+  const { gameState, initGame } = useGameEngine(config.players, config.mapSize, gameActive, isPaused);
 
-  const handleStart = () => {
-    setStatus(GameStatus.PLAYING);
-    // Reset specific UI values if needed, but GameScene handles logic reset via key
-  };
-
-  const handleGameOver = useCallback(async (losingPlayerId: number) => {
-    const winningId = losingPlayerId === 1 ? 2 : 1;
-    setWinnerId(winningId);
-    setStatus(GameStatus.GAME_OVER);
+  // Initialize Audio
+  useEffect(() => {
+    audioRef.current = new Audio(MUSIC_URL);
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.3;
     
-    const winnerName = winningId === 1 ? "Santa Red" : "Elf Green";
-    const loserName = winningId === 1 ? "Elf Green" : "Santa Red";
-    
-    setCommentary("Generating battle report...");
-    const text = await generateBattleCommentary(winnerName, loserName);
-    setCommentary(text);
+    return () => {
+        if(audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
+    };
   }, []);
 
-  const handleRestart = () => {
-    setGameKey(k => k + 1);
-    setStatus(GameStatus.PLAYING);
-    setWinnerId(null);
-    setP1State(initialPlayerState(1));
-    setP2State(initialPlayerState(2));
+  // Handle Play/Pause of Music
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    if (gameActive && !isPaused && !isMuted) {
+        audioRef.current.play().catch((e) => console.log("Audio play blocked by browser policy until interaction", e));
+    } else {
+        audioRef.current.pause();
+    }
+  }, [gameActive, isPaused, isMuted]);
+
+  const handleStart = (players: number, mapSize: MapSize) => {
+    setConfig({ players, mapSize });
+    setGameActive(true);
+    setIsPaused(false);
   };
 
-  const handleStatsUpdate = useCallback((p1: PlayerState, p2: PlayerState) => {
-    // We can throttle this if performance becomes an issue, but for this simple app direct update is fine
-    setP1State(p1);
-    setP2State(p2);
-  }, []);
+  const handleQuit = () => {
+    setGameActive(false);
+    setIsPaused(false);
+  };
+
+  // Escape Key Handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && gameActive && !gameState?.isGameOver) {
+        setIsPaused(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameActive, gameState?.isGameOver]);
 
   return (
-    <div className="relative w-full h-screen bg-slate-900">
-      <Canvas shadows camera={{ position: [0, 20, 20], fov: 45 }}>
-        <GameScene 
-            key={gameKey}
-            status={status} 
-            onGameOver={handleGameOver} 
-            onStatsUpdate={handleStatsUpdate}
-        />
-      </Canvas>
+    <div className="w-full h-screen bg-slate-900 relative">
+      {!gameActive && <Menu onStart={handleStart} />}
       
-      <UI 
-        status={status} 
-        p1={p1State} 
-        p2={p2State} 
-        winnerId={winnerId}
-        commentary={commentary}
-        onStart={handleStart}
-        onRestart={handleRestart}
-      />
+      {gameActive && gameState && (
+        <>
+            <div className="flex flex-wrap w-full h-full relative z-0">
+            {gameState.players.map((p, i) => (
+                <Viewport 
+                key={p.id}
+                gameState={gameState}
+                player={p}
+                screenId={i}
+                totalScreens={gameState.players.length}
+                />
+            ))}
+            </div>
+
+            {/* Mute Button (always visible in game) */}
+            <button 
+                onClick={() => setIsMuted(prev => !prev)}
+                className="absolute bottom-4 left-4 z-40 p-2 bg-slate-800/80 text-white rounded-full hover:bg-slate-700 transition-colors border border-slate-600"
+                title={isMuted ? "Włącz muzykę" : "Wycisz muzykę"}
+            >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            </button>
+
+            {/* PAUSE MENU */}
+            {isPaused && !gameState.isGameOver && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm">
+                     <div className="bg-slate-800 p-8 rounded-2xl border-4 border-slate-600 shadow-2xl max-w-sm w-full text-center">
+                        <div className="flex justify-center mb-4">
+                             <Pause className="w-16 h-16 text-blue-400" />
+                        </div>
+                        <h2 className="text-3xl font-bold text-white mb-8">PAUZA</h2>
+                        
+                        <div className="space-y-4">
+                            <button 
+                                onClick={() => setIsPaused(false)}
+                                className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-colors"
+                            >
+                                <Play className="w-5 h-5 fill-current" /> WZNÓW GRĘ
+                            </button>
+                            
+                            <button 
+                                onClick={handleQuit}
+                                className="w-full bg-slate-700 hover:bg-red-600/80 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-colors"
+                            >
+                                <LogOut className="w-5 h-5" /> WYJDŹ DO MENU
+                            </button>
+                        </div>
+                     </div>
+                </div>
+            )}
+
+            {/* GAME OVER SCREEN */}
+            {gameState.isGameOver && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="bg-slate-800 p-8 rounded-2xl border-4 border-yellow-500 text-center max-w-lg shadow-2xl shadow-yellow-500/20">
+                        <h2 className="text-5xl font-black text-yellow-400 mb-4 drop-shadow-lg">KONIEC GRY!</h2>
+                        <div className="text-2xl text-white mb-8">
+                            Wygrywa <span className="font-bold underline decoration-4 underline-offset-4" style={{color: gameState.players.find(p => p.id === gameState.winnerId)?.color}}>
+                                {gameState.players.find(p => p.id === gameState.winnerId)?.name}
+                            </span>
+                        </div>
+                        <button 
+                            onClick={handleQuit}
+                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-colors shadow-lg shadow-blue-900/50"
+                        >
+                            Wróć do Menu
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
+      )}
     </div>
   );
 };
