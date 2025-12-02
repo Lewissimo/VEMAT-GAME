@@ -8,6 +8,7 @@ function createWindow() {
     height: 900,
     backgroundColor: '#020617',
     autoHideMenuBar: true,
+    fullscreen: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

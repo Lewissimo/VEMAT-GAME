@@ -2,20 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Menu } from './components/Menu';
 import { Viewport } from './components/Viewport';
 import { useGameEngine } from './hooks/useGameEngine';
-import { MapSize } from './types';
+import { MapSize, GameMode } from './types';
 import { Pause, LogOut, Play, Volume2, VolumeX } from 'lucide-react';
-import { MUSIC_URL } from './constants';
-import { SnowOverlay } from './components/SnowOverlay';
+import { MUSIC_URL, TEAM_COLORS } from './constants';
 
 const App = () => {
   const [gameActive, setGameActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [config, setConfig] = useState({ players: 2, mapSize: MapSize.SMALL });
+  const [config, setConfig] = useState({ players: 2, mapSize: MapSize.SMALL, gameMode: GameMode.DEATHMATCH });
   const [isMuted, setIsMuted] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  const { gameState, initGame } = useGameEngine(config.players, config.mapSize, gameActive, isPaused);
+  const { gameState, initGame } = useGameEngine(config.players, config.mapSize, config.gameMode, gameActive, isPaused);
 
   // Initialize Audio
   useEffect(() => {
@@ -42,8 +41,8 @@ const App = () => {
     }
   }, [gameActive, isPaused, isMuted]);
 
-  const handleStart = (players: number, mapSize: MapSize) => {
-    setConfig({ players, mapSize });
+  const handleStart = (players: number, mapSize: MapSize, gameMode: GameMode) => {
+    setConfig({ players, mapSize, gameMode });
     setGameActive(true);
     setIsPaused(false);
   };
@@ -63,6 +62,24 @@ const App = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameActive, gameState?.isGameOver]);
+
+  const getWinnerName = () => {
+    if (!gameState) return "";
+    if (config.gameMode === GameMode.CTF) {
+        return gameState.winningTeam === 0 ? "DRUŻYNA CZERWONA" : "DRUŻYNA NIEBIESKA";
+    } else {
+        return gameState.players.find(p => p.id === gameState.winnerId)?.name || "GRACZ";
+    }
+  };
+  
+  const getWinnerColor = () => {
+     if (!gameState) return "#fff";
+     if (config.gameMode === GameMode.CTF) {
+         return gameState.winningTeam === 0 ? TEAM_COLORS[0] : TEAM_COLORS[1];
+     } else {
+         return gameState.players.find(p => p.id === gameState.winnerId)?.color;
+     }
+  };
 
   return (
     <div className="w-full h-screen bg-slate-900 relative">
@@ -125,8 +142,8 @@ const App = () => {
                     <div className="bg-slate-800 p-8 rounded-2xl border-4 border-yellow-500 text-center max-w-lg shadow-2xl shadow-yellow-500/20">
                         <h2 className="text-5xl font-black text-yellow-400 mb-4 drop-shadow-lg">KONIEC GRY!</h2>
                         <div className="text-2xl text-white mb-8">
-                            Wygrywa <span className="font-bold underline decoration-4 underline-offset-4" style={{color: gameState.players.find(p => p.id === gameState.winnerId)?.color}}>
-                                {gameState.players.find(p => p.id === gameState.winnerId)?.name}
+                            Wygrywa <span className="font-bold underline decoration-4 underline-offset-4" style={{color: getWinnerColor()}}>
+                                {getWinnerName()}
                             </span>
                         </div>
                         <button 

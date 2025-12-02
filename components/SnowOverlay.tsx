@@ -13,9 +13,10 @@ export const SnowOverlay = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* Snowflakes */}
       {snowflakes.map(sf => (
         <div
-          key={sf.id}
+          key={`sf-${sf.id}`}
           className="snowflake"
           style={{
             left: sf.left,

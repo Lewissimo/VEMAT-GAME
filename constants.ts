@@ -8,27 +8,29 @@ export const MAP_DIMENSIONS = {
   [MapSize.LARGE]: { width: 3200, height: 2400 }, // ~4 screens
 };
 
-export const PLAYER_RADIUS = 15; // Reduced from 25 for tighter handling
-export const SNOWBALL_RADIUS = 5; // Reduced from 8
-export const TREE_RADIUS = 40; // Visual radius stays same
+export const PLAYER_RADIUS = 15; 
+export const SNOWBALL_RADIUS = 5; 
+export const TREE_RADIUS = 40; 
 export const POWERUP_RADIUS = 20;
 
 export const VENDING_MACHINE_SIZE = { width: 60, depth: 40, height: 80 };
-// Simplified radius for collision (avg of width/depth)
-export const VENDING_MACHINE_RADIUS = 25; // Reduced from 40 to allow corner clipping
+export const VENDING_MACHINE_RADIUS = 25;
 
 // Vending Machine Physics
 export const VM_PHYSICS = {
-  MASS: 3.0, // Heavier than player
-  FRICTION: 0.99, // Almost 1.0 means very little friction (slides very far)
-  DAMAGE_THRESHOLD: 4.0, // Speed required to deal damage
-  COLLISION_DAMAGE: 30, // Damage dealt when hitting player at speed
+  MASS: 3.0, 
+  FRICTION: 0.99, 
+  DAMAGE_THRESHOLD: 4.0, 
+  COLLISION_DAMAGE: 30, 
 };
 
-// Placeholder URL - jeśli masz konkretny plik, podmień link tutaj
-export const VEMAT_LOGO_URL = '../vemat_logo.jpeg';
+export const CTF_STATS = {
+  WIN_SCORE: 3,
+  BASE_RADIUS: 100, // Zone to return flag
+  FLAG_RADIUS: 20, // Collision to pick up
+};
 
-// Royalty-free Christmas music
+export const VEMAT_LOGO_URL = '../logo_vemat.png';
 export const MUSIC_URL = 'https://assets.mixkit.co/music/preview/mixkit-christmas-village-148.mp3';
 
 export const BASE_STATS = {
@@ -36,9 +38,9 @@ export const BASE_STATS = {
   ACCELERATION: 0.2,
   FRICTION: 0.96,
   TURN_SPEED: 0.08,
-  SHOOT_COOLDOWN: 30, // frames
+  SHOOT_COOLDOWN: 30, 
   SNOWBALL_SPEED: 12,
-  SNOWBALL_LIFETIME: 1500, // ms
+  SNOWBALL_LIFETIME: 1500, 
   MAX_HEALTH: 100,
   DAMAGE: 10,
 };
@@ -49,20 +51,26 @@ export const PHYSICS = {
 };
 
 export const BOMB_STATS = {
-  TIMER: 8000, // ms
+  TIMER: 8000, 
   RADIUS: 150,
   DAMAGE: 60,
-  COOLDOWN: 60, // frames between drops
+  COOLDOWN: 60, 
   PACK_AMOUNT: 10,
 };
 
-export const POWERUP_DURATION = 8000; // ms (No longer used for expiry, kept for types)
+export const POWERUP_DURATION = 8000; 
 
 export const COLORS = {
   p1: '#ef4444', // red-500
   p2: '#3b82f6', // blue-500
   p3: '#22c55e', // green-500
   p4: '#eab308', // yellow-500
+};
+
+// Team Colors for CTF
+export const TEAM_COLORS = {
+  0: '#ef4444', // Red Team
+  1: '#3b82f6', // Blue Team
 };
 
 export const CONTROLS = [
@@ -83,4 +91,5 @@ export const POWERUP_CONFIG = {
   [PowerUpType.MEGA_DAMAGE]: { color: '#be123c', icon: '💪' },
   [PowerUpType.HEAL]: { color: '#10b981', icon: '❤️' },
   [PowerUpType.BOMB_PACK]: { color: '#1e293b', icon: '💣' },
+  [PowerUpType.COFFEE]: { color: '#78350f', icon: '☕' },
 };
